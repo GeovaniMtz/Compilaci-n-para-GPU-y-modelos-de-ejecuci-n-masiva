@@ -1,14 +1,10 @@
 import sys
 import os
 
-# Agregamos el directorio actual al path para poder importar 'src'
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# --- Ajuste de PATH para importación ---
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), 'src')))
 
-from src.main import run_simulation
+from gpu_compilacion.main import run_compilacion
 
 if __name__ == "__main__":
-    try:
-        run_simulation()
-    except Exception as e:
-        print(f"ERROR CRÍTICO: {e}")
-        print("Asegúrate de tener una GPU NVIDIA y CUDA Toolkit instalado.")
+  run_compilacion()
