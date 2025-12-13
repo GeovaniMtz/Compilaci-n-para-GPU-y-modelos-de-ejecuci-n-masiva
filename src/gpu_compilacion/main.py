@@ -33,7 +33,7 @@ def run_compilacion(matrix_size):
     total_threads_needed = MATRIX_SIZE * MATRIX_SIZE
     
     print(f"\nConfiguración:")
-    print(f"Matriz de Cómputo (N): {MATRIX_SIZE}x{MATRIX_SIZE}")
+    print(f"Matriz (N): {MATRIX_SIZE}x{MATRIX_SIZE}")
     print(f"Lógica Secuencial (CPU): 3 bucles anidados (O(N³)) para Mult. | 2 bucles (O(N²)) para Suma.")
     print(f"Lógica Paralela (GPU): {total_threads_needed:,} hilos de ejecución.")
     
@@ -55,7 +55,7 @@ def run_compilacion(matrix_size):
         print("="*80)
 
         # Compilación JIT (Warm-up)
-        print("A) COMPILACIÓN JIT (Python -> PTX):")
+        print("Comparación JIT (Python -> PTX):")
         start_jit = time.time()
         # Se manda a llamar una vez para forzar la compilación JIT de la multiplicación
         run_matrix_mult_gpu(A[:1,:1], B[:1,:1], threads_per_block=(1, 1)) 
@@ -65,8 +65,8 @@ def run_compilacion(matrix_size):
         C_gpu_mult, tiempo_gpu_total_mult, tiempo_gpu_kernel_mult, tiempo_transfer_mult = run_matrix_mult_gpu(A, B, threads_per_block=THREADS_PER_BLOCK)
 
         print(f"\nRESULTADOS MULTIPLICACIÓN:")
-        print(f"Tiempo Cómputo Kernel (Puro): {tiempo_gpu_kernel_mult:.4f} segundos")
-        print(f"Tiempo Transferencias (Overhead): {tiempo_transfer_mult:.4f} segundos")
+        print(f"Tiempo de kernel: {tiempo_gpu_kernel_mult:.4f} segundos")
+        print(f"Tiempo de transferencias (Overhead): {tiempo_transfer_mult:.4f} segundos")
         print(f"Tiempo TOTAL GPU: {tiempo_gpu_total_mult:.4f} segundos")
         
         # Se ejecuta la fase secuencial para suma
@@ -92,8 +92,8 @@ def run_compilacion(matrix_size):
         C_gpu_add, tiempo_gpu_total_add, tiempo_gpu_kernel_add, tiempo_transfer_add = run_matrix_add_gpu(A, B, threads_per_block=THREADS_PER_BLOCK)
         
         print(f"\nRESULTADOS SUMA:")
-        print(f"Tiempo Cómputo Kernel (Puro): {tiempo_gpu_kernel_add:.4f} segundos")
-        print(f"Tiempo Transferencias (Overhead): {tiempo_transfer_add:.4f} segundos")
+        print(f"Tiempo de Kernel (Puro): {tiempo_gpu_kernel_add:.4f} segundos")
+        print(f"Tiempo de transferencias (Overhead): {tiempo_transfer_add:.4f} segundos")
         print(f"Tiempo TOTAL GPU: {tiempo_gpu_total_add:.4f} segundos")
 
 
