@@ -82,7 +82,7 @@ def run_compilacion(matrix_size):
         print("="*80)
         
         # ACompilación JIT (Warm-up) para SUMA
-        print("A) COMPILACIÓN JIT (Python -> PTX):")
+        print("COMPILACIÓN JIT (Python -> PTX):")
         start_jit = time.time()
         # Se manda a llamar una vez para forzar la compilación JIT de la SUMA
         run_matrix_add_gpu(A[:1,:1], B[:1,:1], threads_per_block=(1, 1)) 
