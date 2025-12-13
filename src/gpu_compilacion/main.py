@@ -12,14 +12,17 @@ def crear_matrices(N):
     B = np.random.rand(N, N).astype(np.float32)
     return A, B
 
-def run_compilacion():
+# AHORA ACEPTA EL TAMAÑO COMO PARÁMETRO
+def run_compilacion(matrix_size):
     """
     Función principal para ejecutar el proceso de compilación
     """
     
-    # Configuración de tamaño de matriz y bloques/hilos
-    MATRIX_SIZE = 512 
+    # Se usa el tamaño recibido desde run.py
+    MATRIX_SIZE = matrix_size
     THREADS_PER_BLOCK = (32, 32)
+    
+    # ... (El resto del código sigue igual, pero usando MATRIX_SIZE)
     
     print("="*80)
     print("Proceso de compilación para GPU: Multiplicación y Suma de Matrices")
