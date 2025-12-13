@@ -11,7 +11,7 @@ def matrix_mult_cpu(A, B):
 
     C = np.zeros((N, M), dtype=np.float32)
 
-    # Lógica iterativa/secuencial (3 bucles anidados)
+    # Multiplicación de matrices secuencial
     start = time.time()
     for i in range(N):
         for j in range(M):
@@ -19,5 +19,19 @@ def matrix_mult_cpu(A, B):
             for k in range(K):
                 suma += A[i, k] * B[k, j]
             C[i, j] = suma
+    tiempo = time.time() - start
+    return C, tiempo
+
+def matrix_add_cpu(A, B):
+    """
+    Suma de matrices (C = A + B) de forma secuencial.
+    """
+    N, M = A.shape[0], A.shape[1]
+    C = np.zeros((N, M), dtype=np.float32)
+
+    start = time.time()
+    for i in range(N):
+        for j in range(M):
+            C[i, j] = A[i, j] + B[i, j]
     tiempo = time.time() - start
     return C, tiempo

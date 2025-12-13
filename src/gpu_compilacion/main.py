@@ -2,13 +2,11 @@ import numpy as np
 import time
 from numba import cuda
 
-from .ops import matrix_mult_cpu
-from .kernels import run_matrix_mult_gpu
+from .ops import matrix_mult_cpu, matrix_add_cpu 
+from .kernels import run_matrix_mult_gpu, run_matrix_add_gpu 
 
 def crear_matrices(N):
-    """
-    Función auxiliar para crear matrices aleatorias de tamaño NxN.
-    """
+    """Función auxiliar para crear matrices aleatorias de tamaño NxN."""
     np.random.seed(42)
     A = np.random.rand(N, N).astype(np.float32)
     B = np.random.rand(N, N).astype(np.float32)
@@ -24,7 +22,7 @@ def run_compilacion():
     THREADS_PER_BLOCK = (32, 32)
     
     print("="*80)
-    print("Proceso de compilación para GPU: Multiplicación de Matrices")
+    print("Proceso de compilación para GPU: Multiplicación y Suma de Matrices")
     print("="*80)
 
     # Inicialización de datos: Matrices A y B
@@ -33,67 +31,87 @@ def run_compilacion():
     
     print(f"\nConfiguración:")
     print(f"Matriz de Cómputo (N): {MATRIX_SIZE}x{MATRIX_SIZE}")
-    print(f"Lógica Secuencial (CPU): 3 bucles anidados (O(N³))")
+    print(f"Lógica Secuencial (CPU): 3 bucles anidados (O(N³)) para Mult. | 2 bucles (O(N²)) para Suma.")
     print(f"Lógica Paralela (GPU): {total_threads_needed:,} hilos de ejecución.")
     
-    # Se ejecuta la fase secuencial (CPU)
+    # Se ejecuta la fase secuencial primero para multiplicación
     print("\n" + "="*80)
-    print("Fase secuencial de compilación y ejecución (CPU)")
+    print("Fase secuencial de compilación y ejecución (CPU) - Multiplicación")
     print("="*80)
-    C_cpu, tiempo_cpu_seq = matrix_mult_cpu(A, B)
-    print(f"Tiempo de Ejecución (CPU): {tiempo_cpu_seq:.4f} segundos")
+    C_cpu_mult, tiempo_cpu_mult_seq = matrix_mult_cpu(A, B)
+    print(f"Tiempo de Ejecución (CPU Multiplicación): {tiempo_cpu_mult_seq:.4f} segundos")
 
-    # Se ejecuta la fase de compilación y ejecución en GPU
+    # Se ejecuta la fase de compilación y ejecución en GPU para multiplicación
     try:
         if not cuda.is_available():
             print("\nNo se detectó una GPU compatible con CUDA")
             return
 
         print("\n" + "="*80)
-        print("Fase secuencial de compilación y ejecución (GPU)")
+        print("Fase de compilación y ejecución (GPU) - Multiplicación")
         print("="*80)
 
         # Compilación JIT (Warm-up)
         print("A) COMPILACIÓN JIT (Python -> PTX):")
         start_jit = time.time()
-        
-        # Se manda a llamar una vez para forzar la compilación JIT y cacheo
+        # Se manda a llamar una vez para forzar la compilación JIT de la multiplicación
         run_matrix_mult_gpu(A[:1,:1], B[:1,:1], threads_per_block=(1, 1)) 
-        tiempo_jit_warmup = time.time() - start_jit
-        print(f"Compilador Numba JIT activado, PTX (IR) generado y cacheado. (Tiempo: {tiempo_jit_warmup:.4f}s)")
+        tiempo_jit_warmup_mult = time.time() - start_jit
+        print(f"Compilador Numba JIT activado para Multiplicación. (Tiempo: {tiempo_jit_warmup_mult:.4f}s)")
         
-        # Se transfiere data HOST -> DEVICE
-        print("\nB) TRANSFERENCIA HOST -> DEVICE:")
+        C_gpu_mult, tiempo_gpu_total_mult, tiempo_gpu_kernel_mult, tiempo_transfer_mult = run_matrix_mult_gpu(A, B, threads_per_block=THREADS_PER_BLOCK)
 
-        # La función run_matrix_mult_gpu ya mide esto internamente.
-        print("Se mueven los datos de la memoria HOST (CPU) a la memoria DEVICE (GPU)...")
+        print(f"\nRESULTADOS MULTIPLICACIÓN:")
+        print(f"Tiempo Cómputo Kernel (Puro): {tiempo_gpu_kernel_mult:.4f} segundos")
+        print(f"Tiempo Transferencias (Overhead): {tiempo_transfer_mult:.4f} segundos")
+        print(f"Tiempo TOTAL GPU: {tiempo_gpu_total_mult:.4f} segundos")
         
-        # Ejecución del Kernel (Mapeo Loop-to-Grid)
-        print("\nC) MAPEO ESPACIAL Y EJECUCIÓN (SIMT):")
-        print(f"El compilador rompe los ciclos y asigna la tarea a {total_threads_needed:,} hilos concurrentes...")
-        
-        C_gpu, tiempo_gpu_total, tiempo_gpu_kernel, tiempo_transfer = run_matrix_mult_gpu(A, B, threads_per_block=THREADS_PER_BLOCK)
-
-        print(f"Tiempo Cómputo Kernel (Puro): {tiempo_gpu_kernel:.4f} segundos")
-        print(f"Tiempo Transferencias (Overhead): {tiempo_transfer:.4f} segundos")
-        print(f"Tiempo TOTAL GPU: {tiempo_gpu_total:.4f} segundos")
-        
-        # Resultados y Análisis
+        # Se ejecuta la fase secuencial para suma
         print("\n" + "="*80)
-        print("Resultados y Análisis de la Transformación")
+        print("Fase secuencial de compilación y ejecución (CPU) - Suma")
+        print("="*80)
+        C_cpu_add, tiempo_cpu_add_seq = matrix_add_cpu(A, B)
+        print(f"Tiempo de Ejecución (CPU Suma): {tiempo_cpu_add_seq:.4f} segundos")
+
+        # Fase de compilación y ejecución en GPU para suma
+        print("\n" + "="*80)
+        print("Fase de compilación y ejecución (GPU) - Suma")
         print("="*80)
         
-        speedup_kernel_vs_seq = tiempo_cpu_seq / tiempo_gpu_kernel
+        # ACompilación JIT (Warm-up) para SUMA
+        print("A) COMPILACIÓN JIT (Python -> PTX):")
+        start_jit = time.time()
+        # Se manda a llamar una vez para forzar la compilación JIT de la SUMA
+        run_matrix_add_gpu(A[:1,:1], B[:1,:1], threads_per_block=(1, 1)) 
+        tiempo_jit_warmup_add = time.time() - start_jit
+        print(f"Compilador Numba JIT activado para Suma. (Tiempo: {tiempo_jit_warmup_add:.4f}s)")
+
+        C_gpu_add, tiempo_gpu_total_add, tiempo_gpu_kernel_add, tiempo_transfer_add = run_matrix_add_gpu(A, B, threads_per_block=THREADS_PER_BLOCK)
         
-        print(f"\n| {'Métrica':<35} | {'Valor':<10} | {'Análisis':<30} |")
-        print("|" + "-"*36 + "|" + "-"*12 + "|" + "-"*32 + "|")
-        print(f"| {'Tiempo CPU (Lógica Secuencial)':<35} | {tiempo_cpu_seq:<12.4f} | {'Base de comparación'}")
-        print(f"| {'Tiempo GPU (Kernel Puro)':<35} | {tiempo_gpu_kernel:<12.4f} | {'Mapeo Loop-to-Grid'}")
-        print(f"| {'Speedup (Kernel vs CPU)':<35} | {f'{speedup_kernel_vs_seq:.2f}x':<12} | {f'Aceleración por gpu'}")
+        print(f"\nRESULTADOS SUMA:")
+        print(f"Tiempo Cómputo Kernel (Puro): {tiempo_gpu_kernel_add:.4f} segundos")
+        print(f"Tiempo Transferencias (Overhead): {tiempo_transfer_add:.4f} segundos")
+        print(f"Tiempo TOTAL GPU: {tiempo_gpu_total_add:.4f} segundos")
+
+
+        # Resultados y Análisis
+        print("\n" + "="*80)
+        print("Resultados y Análisis de la Transformación (COMPLETOS)")
+        print("="*80)
+        
+        speedup_mult = tiempo_cpu_mult_seq / tiempo_gpu_kernel_mult
+        speedup_add = tiempo_cpu_add_seq / tiempo_gpu_kernel_add
+
+        print(f"\n| {'Operación':<15} | {'CPU Seq (s)':<12} | {'GPU Kernel (s)':<15} | {'Speedup (x)':<12} |")
+        print("|" + "-"*16 + "|" + "-"*14 + "|" + "-"*17 + "|" + "-"*14 + "|")
+        print(f"| {'Multiplicación':<15} | {tiempo_cpu_mult_seq:<12.4f} | {tiempo_gpu_kernel_mult:<15.4f} | {f'{speedup_mult:.2f}x':<12} |")
+        print(f"| {'Suma':<15} | {tiempo_cpu_add_seq:<12.4f} | {tiempo_gpu_kernel_add:<15.4f} | {f'{speedup_add:.2f}x':<12} |")
 
         # Validación
-        valid = np.allclose(C_cpu, C_gpu, atol=1e-5)
-        print(f"\nValidación (CPU vs GPU): {'COOINCIDEN' if valid else 'FALLO'} - Demuestra la precisión de la traducción JIT.")
+        valid_mult = np.allclose(C_cpu_mult, C_gpu_mult, atol=1e-5)
+        valid_add = np.allclose(C_cpu_add, C_gpu_add, atol=1e-5)
+        print(f"\nValidación Multiplicación: {'COINCIDEN' if valid_mult else 'FALLO'}")
+        print(f"Validación Suma: {'COINCIDEN' if valid_add else 'FALLO'}")
         
     except Exception as e:
         print(f"\n[ERROR en GPU]: {e}")

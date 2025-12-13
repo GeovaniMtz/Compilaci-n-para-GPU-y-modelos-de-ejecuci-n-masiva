@@ -1,7 +1,6 @@
 # Proyecto 02 — Compilación para GPU (Numba CUDA)
 
-Este repositorio contiene un **programa demostrativo ejecutable** que toma operaciones matriciales comunes (suma, escalamiento y multiplicación de matrices)
-y las ejecuta como **kernels paralelos** en GPU usando **Numba CUDA (JIT)**.
+Este repositorio contiene un **programa demostrativo ejecutable** que toma operaciones matriciales comunes (multiplicación de matrices) y las ejecuta como **kernels paralelos** en GPU usando **Numba CUDA (JIT)**.
 
 La idea central es mostrar **cómo se traduce la abstracción de bucles (CPU)** a **coordenadas de hilos (GPU)** mediante `cuda.grid(2)`,
 y cómo **la primera ejecución** incurre en el costo de **compilación JIT a PTX**, mientras que las siguientes reutilizan el kernel ya compilado.
