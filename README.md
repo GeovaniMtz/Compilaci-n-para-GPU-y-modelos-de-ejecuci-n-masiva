@@ -2,11 +2,11 @@
 
 Este repositorio contiene un **programa demostrativo ejecutable** que toma operaciones matriciales básicas (**multiplicación** y **suma**) y las ejecuta como **kernels paralelos** en GPU usando **Numba CUDA (JIT)**.
 
-El objetivo del demo es hacer explícito:
+El objetivo del programa es hacer explícito:
 
 - **CPU (secuencial):** el cálculo se expresa como bucles `for` (por ejemplo, 2–3 bucles anidados).
 - **GPU (paralelo):** esos índices del bucle se mapean a **coordenadas de hilos** con `cuda.grid(2)`.
-- **Compilación JIT:** la **primera** ejecución en GPU paga el costo de **compilar** el kernel (generando código PTX). Las siguientes ejecuciones reutilizan lo ya compilado para la misma firma de tipos.
+- **Compilación JIT:** la **primera** ejecución en GPU tiene un costo de **compilar** el kernel alto (generando código PTX). Las siguientes ejecuciones reutilizan lo ya compilado para la misma firma de tipos.
 
 
 ---
@@ -94,8 +94,6 @@ Donde `1024` es el tamaño `N` para matrices `N×N`.
 
 ### ¿Qué imprime el programa?
 
-Normalmente verás:
-
 * tiempos de **CPU secuencial**
 * tiempos de **GPU** separados en:
 
@@ -107,7 +105,7 @@ Normalmente verás:
 
 ---
 
-## Cómo evidenciar el costo de compilación JIT
+## Costo de compilación JIT
 
 Ejecuta el programa **dos veces** con el mismo `N`:
 
@@ -116,15 +114,15 @@ python src/run.py 1024
 python src/run.py 1024
 ```
 
-La **primera corrida** suele ser más lenta del lado GPU por el costo de **compilación JIT** (además de transferencias/launch). En la segunda ya se reutiliza el kernel compilado (misma firma de tipos).
+La **primera ejecución** puede ser más lenta del lado GPU por el costo de **compilación JIT** (además de transferencias/launch). En la segunda ya se reutiliza el kernel compilado (misma firma de tipos).
 
 ---
 
 ## Ejecutar en Google Colab (sin GPU NVIDIA local)
 
-1. En Colab ve a: `Entorno de ejecución → Cambiar tipo de entorno de ejecución`
+1. En Colab abrir: `Entorno de ejecución > Cambiar tipo de entorno de ejecución`
 
-   * **Acelerador por hardware:** `GPU` (por ejemplo **T4**)
+   * **Acelerador por hardware:** `GPU T4`
 
 2. Sube el proyecto como `.zip` (desde el panel de archivos) y descomprímelo.
    Luego, en una celda:
@@ -138,35 +136,9 @@ La **primera corrida** suele ser más lenta del lado GPU por el costo de **compi
 
 > Si el nombre del zip/carpeta cambia, se debe ajsutar `CompilacionGPU.zip` y/o la ruta del `cd`.
 
----
-
-## Si `cuda.is_available()` sale en `False`
-
-Causas típicas:
-
-* Drivers NVIDIA no instalados / desactualizados
-* Estás en una VM sin passthrough de GPU
-* Estás en WSL sin configuración de CUDA para WSL
-
-Alternativa rápida: usar **Google Colab** (sección anterior) con GPU T4.
 
 ---
 
-## (Opcional) Ver PTX generado por Numba
-
-Numba permite inspeccionar el PTX del kernel ya compilado. Una forma práctica (después de forzar al menos una compilación/ejecución) es:
-
-```python
-from gpu_compilacion.kernels import matrix_mult_kernel
-
-# después de que el kernel se haya compilado (por ejemplo, tras correr el programa)
-sig = matrix_mult_kernel.signatures[0]
-print(matrix_mult_kernel.inspect_ptx(sig))
-```
-
-> Nota: este snippet asume que el kernel ya generó al menos una firma en `signatures`.
-
----
 
 ## Referencias (documentación)
 
